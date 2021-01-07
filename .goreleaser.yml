@@ -37,6 +37,17 @@ archives:
       amd64: x86_64
 checksum:
   name_template: "checksums.txt"
+
+brews:
+  - goarm: 6
+    tap:
+      owner: huangnauh
+      name: homebrew-tap
+    commit_author:
+      name: "huangnauh"
+      email: "huanglibo2010@gmail.com"
+    description: "UPYUN Storage Command Tool"
+
 publishers:
   - name: upyun
     checksum: true
