@@ -181,10 +181,13 @@ func diffFileMetas(src []*fileMeta, dst []*fileMeta) []*fileMeta {
 	return res
 }
 
-func initDB() (err error) {
-	db, err = leveldb.OpenFile(getDBName(), nil)
+func initDB(dir string) (err error) {
+	if dir == "" {
+		dir = getDBName()
+	}
+	db, err = leveldb.OpenFile(dir, nil)
 	if err != nil {
-		Print("db %v %s", err, getDBName())
+		Print("db %v %s", err, dir)
 	}
 	return err
 }

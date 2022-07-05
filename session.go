@@ -837,7 +837,7 @@ func (sess *Session) syncDirectory(localPath, upPath string) (int, error) {
 	return status, nil
 }
 
-func (sess *Session) Sync(localPath, upPath string, workers int, delete, strong bool) {
+func (sess *Session) Sync(localPath, upPath, dbDir string, workers int, delete, strong bool) {
 	var wg sync.WaitGroup
 	sess.taskChan = make(chan interface{}, workers*2)
 	stopChan := make(chan bool, 1)
@@ -847,7 +847,7 @@ func (sess *Session) Sync(localPath, upPath string, workers int, delete, strong 
 	upPath = sess.AbsPath(upPath)
 	localPath, _ = filepath.Abs(localPath)
 
-	if err := initDB(); err != nil {
+	if err := initDB(dbDir); err != nil {
 		PrintErrorAndExit("sync: init database: %v", err)
 	}
 

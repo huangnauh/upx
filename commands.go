@@ -382,13 +382,14 @@ func NewSyncCommand() cli.Command {
 			if c.NArg() > 1 {
 				upPath = c.Args().Get(1)
 			}
-			session.Sync(localPath, upPath, c.Int("w"), c.Bool("delete"), c.Bool("strong"))
+			session.Sync(localPath, upPath, c.String("db"), c.Int("w"), c.Bool("delete"), c.Bool("strong"))
 			return nil
 		},
 		Flags: []cli.Flag{
 			cli.IntFlag{Name: "w", Usage: "max concurrent threads", Value: 5},
 			cli.BoolFlag{Name: "delete", Usage: "delete extraneous files from last sync"},
 			cli.BoolFlag{Name: "strong", Usage: "strong consistency"},
+			cli.StringFlag{Name: "db", Usage: "sync database path"},
 		},
 	}
 }
@@ -438,7 +439,7 @@ func NewGetDBCommand() cli.Command {
 			if c.NArg() != 2 {
 				PrintErrorAndExit("get-db local remote")
 			}
-			if err := initDB(); err != nil {
+			if err := initDB(c.String("db")); err != nil {
 				PrintErrorAndExit("get-db: init database: %v", err)
 			}
 			value, err := getDBValue(c.Args()[0], c.Args()[1])
@@ -448,6 +449,9 @@ func NewGetDBCommand() cli.Command {
 			b, _ := json.MarshalIndent(value, "", "  ")
 			Print("%s", string(b))
 			return nil
+		},
+		Flags: []cli.Flag{
+			cli.StringFlag{Name: "db", Usage: "sync database path"},
 		},
 	}
 }
@@ -461,11 +465,14 @@ func NewCleanDBCommand() cli.Command {
 			if c.NArg() != 2 {
 				PrintErrorAndExit("clean-db local remote")
 			}
-			if err := initDB(); err != nil {
+			if err := initDB(c.String("db")); err != nil {
 				PrintErrorAndExit("clean-db: init database: %v", err)
 			}
 			delDBValues(c.Args()[0], c.Args()[1])
 			return nil
+		},
+		Flags: []cli.Flag{
+			cli.StringFlag{Name: "db", Usage: "sync database path"},
 		},
 	}
 }
