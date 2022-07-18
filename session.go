@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -44,6 +45,9 @@ type Session struct {
 	smu    sync.RWMutex
 
 	taskChan chan interface{}
+
+	downloadFiles int64
+	allFiles      int64
 }
 
 type syncTask struct {
@@ -267,7 +271,8 @@ func (sess *Session) Ls(upPath string, match *MatchConfig, maxItems int, isDesc 
 	}
 }
 
-func (sess *Session) getDir(upPath, localPath string, match *MatchConfig, workers int) error {
+func (sess *Session) getDir(upPath, localPath string, match *MatchConfig,
+	start, end string, workers, level int, skipExist, skipFolder, countFiles bool) error {
 	if err := os.MkdirAll(localPath, 0755); err != nil {
 		return err
 	}
@@ -286,10 +291,20 @@ func (sess *Session) getDir(upPath, localPath string, match *MatchConfig, worker
 					fpath := path.Join(upPath, fInfo.Name)
 					lpath := filepath.Join(localPath, filepath.FromSlash(fInfo.Name))
 					if fInfo.IsDir {
-						os.MkdirAll(lpath, 0755)
+						if !skipFolder {
+							os.MkdirAll(lpath, 0755)
+						}
 					} else {
+						if skipExist {
+							_, err := os.Stat(lpath)
+							// fmt.Printf("lpath:%s, err:%s\n", lpath, err)
+							if err == nil {
+								atomic.AddInt64(&sess.allFiles, 1)
+								continue
+							}
+						}
 						for i := 1; i <= MaxRetry; i++ {
-							id, e = sess.getFileWithProgress(id, fpath, lpath, fInfo)
+							id, e = sess.getFileWithProgress(id, fpath, lpath, fInfo, countFiles)
 							if e == nil {
 								break
 							}
@@ -313,18 +328,20 @@ func (sess *Session) getDir(upPath, localPath string, match *MatchConfig, worker
 		Path:         upPath,
 		ObjectsChan:  fInfoChan,
 		MaxListTries: 3,
-		MaxListLevel: -1,
+		MaxListLevel: level,
+		ListStart:    start,
+		ListEnd:      end,
 	})
 	wg.Wait()
 	return err
 }
 
-func (sess *Session) getFileWithProgress(id int, upPath, localPath string, upInfo *upyun.FileInfo) (int, error) {
+func (sess *Session) getFileWithProgress(id int, upPath, localPath string, upInfo *upyun.FileInfo, countFiles bool) (int, error) {
 	var err error
 
 	var bar *uiprogress.Bar
 	idx := id
-	if upInfo.Size > 0 {
+	if upInfo.Size > 0 && !countFiles {
 		bar, idx = AddBar(id, int(upInfo.Size))
 		bar = bar.AppendCompleted()
 		cnt := 0
@@ -362,10 +379,16 @@ func (sess *Session) getFileWithProgress(id int, upPath, localPath string, upInf
 		Path:   sess.AbsPath(upPath),
 		Writer: w,
 	})
+	if err == nil && countFiles {
+		files := atomic.AddInt64(&sess.downloadFiles, 1)
+		atomic.AddInt64(&sess.allFiles, 1)
+		log.Printf("files: %s, count %d", upPath, files)
+	}
 	return idx, err
 }
 
-func (sess *Session) Get(upPath, localPath string, match *MatchConfig, workers int) {
+func (sess *Session) Get(upPath, localPath string, match *MatchConfig,
+	start, end string, workers, level int, skipExist, skipFolder, countFiles bool) {
 	upPath = sess.AbsPath(upPath)
 	upInfo, err := sess.updriver.GetInfo(upPath)
 	if err != nil {
@@ -392,12 +415,15 @@ func (sess *Session) Get(upPath, localPath string, match *MatchConfig, workers i
 				}
 			}
 		}
-		sess.getDir(upPath, localPath, match, workers)
+		sess.getDir(upPath, localPath, match, start, end, workers, level, skipExist, skipFolder, countFiles)
 	} else {
 		if isDir {
 			localPath = filepath.Join(localPath, path.Base(upPath))
 		}
-		sess.getFileWithProgress(-1, upPath, localPath, upInfo)
+		sess.getFileWithProgress(-1, upPath, localPath, upInfo, countFiles)
+	}
+	if countFiles {
+		log.Printf("files %d\n", sess.allFiles)
 	}
 }
 

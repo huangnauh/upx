@@ -276,12 +276,23 @@ func NewGetCommand() cli.Command {
 					PrintErrorAndExit("get %s: parse mtime: %v", upPath, err)
 				}
 			}
-			session.Get(upPath, localPath, mc, c.Int("w"))
-
+			skipFolder := c.Bool("skip-folder")
+			level := c.Int("level")
+			if skipFolder && level != 0 {
+				PrintErrorAndExit("skip folder when level %d", level)
+			}
+			session.Get(upPath, localPath, mc, c.String("start"), c.String("end"),
+				c.Int("w"), level, c.Bool("skip-exist"), skipFolder, c.Bool("count-files"))
 			return nil
 		},
 		Flags: []cli.Flag{
 			cli.IntFlag{Name: "w", Usage: "max concurrent threads", Value: 5},
+			cli.IntFlag{Name: "level", Usage: "list level", Value: -1},
+			cli.BoolFlag{Name: "skip-exist", Usage: "skip download file when local file exists"},
+			cli.BoolFlag{Name: "skip-folder", Usage: "skip download folder"},
+			cli.BoolFlag{Name: "count-files", Usage: "count files"},
+			cli.StringFlag{Name: "start", Usage: "start folder prefix"},
+			cli.StringFlag{Name: "end", Usage: "end folder prefix"},
 			cli.StringFlag{Name: "mtime", Usage: "file's data was last modified n*24 hours ago, same as linux find command."},
 		},
 	}

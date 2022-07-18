@@ -98,7 +98,6 @@ func readConfigFromFile(login bool) {
 	if confname == "" {
 		confname = getConfigName()
 	}
-
 	data, err := ioutil.ReadFile(confname)
 	if err != nil {
 		os.RemoveAll(confname)
@@ -152,6 +151,10 @@ func saveConfigToFile() {
 }
 
 func getConfigName() string {
+	// file, err := os.Stat(".upx.cfg")
+	// if err == nil {
+	// 	return file.Name()
+	// }
 	if runtime.GOOS == "windows" {
 		return filepath.Join(os.Getenv("USERPROFILE"), ".upx.cfg")
 	}
