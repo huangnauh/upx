@@ -292,6 +292,9 @@ func (sess *Session) getDir(upPath, localPath string, match *MatchConfig,
 					lpath := filepath.Join(localPath, filepath.FromSlash(fInfo.Name))
 					if fInfo.IsDir {
 						if !skipFolder {
+							if countFiles {
+								log.Printf("folder: %s\n", lpath)
+							}
 							os.MkdirAll(lpath, 0755)
 						}
 					} else {
@@ -382,7 +385,7 @@ func (sess *Session) getFileWithProgress(id int, upPath, localPath string, upInf
 	if err == nil && countFiles {
 		files := atomic.AddInt64(&sess.downloadFiles, 1)
 		atomic.AddInt64(&sess.allFiles, 1)
-		log.Printf("files: %s, count %d", upPath, files)
+		log.Printf("files: %s, count %d\n", upPath, files)
 	}
 	return idx, err
 }
@@ -415,7 +418,7 @@ func (sess *Session) Get(upPath, localPath string, match *MatchConfig,
 				}
 			}
 		}
-		sess.getDir(upPath, localPath, match, start, end, workers, level, skipExist, skipFolder, countFiles)
+		sess.getDir(upPath, localPath, match, sess.AbsPath(start), sess.AbsPath(end), workers, level, skipExist, skipFolder, countFiles)
 	} else {
 		if isDir {
 			localPath = filepath.Join(localPath, path.Base(upPath))
