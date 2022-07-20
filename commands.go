@@ -282,7 +282,7 @@ func NewGetCommand() cli.Command {
 				PrintErrorAndExit("skip folder when level %d", level)
 			}
 			session.Get(upPath, localPath, mc, c.String("start"), c.String("end"),
-				c.Int("w"), level, c.Bool("skip-exist"), skipFolder, c.Bool("count-files"))
+				c.Int("w"), level, c.Bool("skip-exist"), skipFolder, c.Bool("verbose"))
 			return nil
 		},
 		Flags: []cli.Flag{
@@ -290,7 +290,7 @@ func NewGetCommand() cli.Command {
 			cli.IntFlag{Name: "level", Usage: "list level", Value: -1},
 			cli.BoolFlag{Name: "skip-exist", Usage: "skip download file when local file exists"},
 			cli.BoolFlag{Name: "skip-folder", Usage: "skip download folder"},
-			cli.BoolFlag{Name: "count-files", Usage: "count files"},
+			cli.BoolFlag{Name: "verbose", Usage: "print download info"},
 			cli.StringFlag{Name: "start", Usage: "start folder prefix"},
 			cli.StringFlag{Name: "end", Usage: "end folder prefix"},
 			cli.StringFlag{Name: "mtime", Usage: "file's data was last modified n*24 hours ago, same as linux find command."},
